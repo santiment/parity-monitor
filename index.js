@@ -14,23 +14,26 @@ const { logger } = require('./logger')
 const ALLOWED_LAG_MINUTES = parseInt(process.env.ALLOWED_LAG_MINUTES || 60)
 const PARITY_REQUEST_INTERVAL_SECONDS =  parseInt(process.env.PARITY_REQUEST_INTERVAL_SECONDS || 60)
 
-const PARITY_NODE = process.env.PARITY_URL || "http://localhost:8545/";
+const PARITY_URL = process.env.PARITY_URL || "http://localhost:8545/";
 
 
 
 // To prevent healthcheck failing during initialization and processing first part of data,
 // we set lastExportTime to current time.
-metrics.currentBlockTime.set(Date.now() / 1000);
+let currentBlockTimeSecondsEpoch = Date.now() / 1000;
+metrics.currentBlockTime.set(currentBlockTimeSecondsEpoch);
+
 
 async function work(web3) {
   const currentBlockNumber = await web3.eth.getBlockNumber();
   metrics.currentBlock.set(currentBlockNumber);
 
   const currentBlock = await web3.eth.getBlock(currentBlockNumber);
-  metrics.currentBlockTime.set(currentBlock.timestamp);
+  currentBlockTimeSecondsEpoch = currentBlock.timestamp;
+  metrics.currentBlockTime.set(currentBlockTimeSecondsEpoch);
 
-  const currentBlockTimeHuman = new Date(metrics.currentBlockTime * 1000);
-  logger.info(`Progressed to time ${currentBlockTimeHuman}`)
+  const currentBlockTimeHuman = new Date(currentBlock.timestamp * 1000);
+  logger.info(`Progressed to block: ${currentBlockNumber} and time: ${currentBlockTimeHuman}`)
 }
 
 async function workLoop(web3) {
@@ -41,9 +44,9 @@ async function workLoop(web3) {
 }
 
 async function init() {
-  logger.info(`Connecting to parity node ${PARITY_NODE}`)
+  logger.info(`Connecting to parity node ${PARITY_URL}`)
   try {
-    const web3 = new Web3(new Web3.providers.HttpProvider(PARITY_NODE))
+    const web3 = new Web3(new Web3.providers.HttpProvider(PARITY_URL))
     metrics.startCollection();
     await workLoop(web3);
   }
@@ -55,10 +58,10 @@ async function init() {
 init()
 
 const healthcheckExportTimeout = () => {
-  const secondsFromLastExport = Date.now() / 1000 - metrics.currentBlockTime
+  const secondsFromLastExport = Date.now() / 1000 - currentBlockTimeSecondsEpoch;
   const isExportTimeoutExceeded = secondsFromLastExport > ALLOWED_LAG_MINUTES * 60
   if (isExportTimeoutExceeded) {
-    return Promise.reject(`Last block is ${secondsFromLastExport / 60 }min old. Exceeding limit  ${ALLOWED_LAG_MINUTES}min.`)
+    return Promise.reject(`Last block is ${secondsFromLastExport / 60 } min old. Exceeding limit of ${ALLOWED_LAG_MINUTES} min.`)
   } else {
     return Promise.resolve()
   }
