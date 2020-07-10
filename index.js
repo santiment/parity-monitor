@@ -26,6 +26,10 @@ metrics.currentBlockTime.set(currentBlockTimeSecondsEpoch);
 
 async function work(web3) {
   const currentBlockNumber = await web3.eth.getBlockNumber();
+  if (currentBlockNumber <= 0) {
+    // The node is currently syncing, ignore this value and report health depending on last seen one.
+    return;
+  }
   metrics.currentBlock.set(currentBlockNumber);
 
   const currentBlock = await web3.eth.getBlock(currentBlockNumber);
