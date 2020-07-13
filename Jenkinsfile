@@ -18,7 +18,7 @@ slaveTemplates.dockerTemplate { label ->
             sh "docker build \
               -t ${awsRegistry}/${imageName}:${env.BRANCH_NAME} \
               -t ${awsRegistry}/${imageName}:${scmVars.GIT_COMMIT} \
-              -f Dockerfile ."
+              -f docker/Dockerfile ."
             sh "docker push ${awsRegistry}/${imageName}:${env.BRANCH_NAME}"
             sh "docker push ${awsRegistry}/${imageName}:${scmVars.GIT_COMMIT}"
           }
