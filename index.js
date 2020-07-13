@@ -20,7 +20,7 @@ const PARITY_URL = process.env.PARITY_URL || "http://localhost:8545/";
 
 // To prevent healthcheck failing during initialization and processing first part of data,
 // we set lastExportTime to current time.
-let currentBlockTimeSecondsEpoch = Date.now() / 1000;
+let currentBlockTimeSecondsEpoch = Math.floor(Date.now() / 1000);
 metrics.currentBlockTime.set(currentBlockTimeSecondsEpoch);
 
 
@@ -62,7 +62,7 @@ async function init() {
 init()
 
 const healthcheckExportTimeout = () => {
-  const secondsFromLastExport = Date.now() / 1000 - currentBlockTimeSecondsEpoch;
+  const secondsFromLastExport = Math.floor(Date.now() / 1000) - currentBlockTimeSecondsEpoch;
   const isExportTimeoutExceeded = secondsFromLastExport > ALLOWED_LAG_MINUTES * 60
   if (isExportTimeoutExceeded) {
     return Promise.reject(`Last block is ${secondsFromLastExport / 60 } min old. Exceeding limit of ${ALLOWED_LAG_MINUTES} min.`)
