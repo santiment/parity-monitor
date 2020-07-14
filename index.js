@@ -28,6 +28,7 @@ async function work(web3) {
   const currentBlockNumber = await web3.eth.getBlockNumber();
   if (currentBlockNumber <= 0) {
     // The node is currently syncing, ignore this value and report health depending on last seen one.
+    logger.info(`Parity reports block: ${currentBlockNumber}. No time is extracted.`);
     return;
   }
   metrics.currentBlock.set(currentBlockNumber);
@@ -41,10 +42,13 @@ async function work(web3) {
 }
 
 async function workLoop(web3) {
-  await work(web3)
-    .then(() => {
-      setTimeout(function() {workLoop(web3);}, PARITY_REQUEST_INTERVAL_SECONDS * 1000)
-    })
+  try {
+    await work(web3);
+  }
+  catch(error) {
+    console.error(error);
+  }
+  setTimeout(function() {workLoop(web3);}, PARITY_REQUEST_INTERVAL_SECONDS * 1000);
 }
 
 async function init() {
