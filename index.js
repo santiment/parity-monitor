@@ -41,10 +41,13 @@ async function work(web3) {
 }
 
 async function workLoop(web3) {
-  await work(web3)
-    .then(() => {
-      setTimeout(function() {workLoop(web3);}, PARITY_REQUEST_INTERVAL_SECONDS * 1000)
-    })
+  try {
+    await work(web3);
+  }
+  catch(error) {
+    console.error(error);
+  }
+  setTimeout(function() {workLoop(web3);}, PARITY_REQUEST_INTERVAL_SECONDS * 1000);
 }
 
 async function init() {
