@@ -1,39 +1,22 @@
-FROM node:10.14.1-alpine AS builder
-
+# ---- Base Node ----
+FROM node:16-alpine AS base
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
-
-RUN apk --no-cache add \
-      bash \
-      g++ \
-      ca-certificates \
-      lz4-dev \
-      musl-dev \
-      cyrus-sasl-dev \
-      openssl-dev \
-      make \
-      python \
-      git
-
 WORKDIR /opt
-
 COPY package.json package-lock.json* ./
 
-RUN npm ci
+# Stage: Building
+FROM base AS builder
+RUN apk --no-cache add git
+# Install library dependencies
+RUN if [ "$NODE_ENV" = "production" ] ; then npm ci --only=prod; else npm i; fi
 RUN npm cache clean --force
 
-FROM node:10.14.1-alpine
-
-RUN apk --no-cache add libsasl openssl lz4-libs netcat-openbsd
-
+# Stage: Execution
+FROM base
 WORKDIR /opt/app
-
-ENV PATH /opt/node_modules/.bin:$PATH
-
 COPY . /opt/app
-
 COPY --from=builder /opt/node_modules /opt/node_modules
 
 EXPOSE 3000
-
 CMD npm start
