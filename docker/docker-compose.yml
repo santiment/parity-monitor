@@ -7,10 +7,21 @@ services:
       args:
         NODE_ENV: development
     environment:
-      PARITY_URL: http://parity.stage.san:30954
-      PARITY_REQUEST_INTERVAL_SECONDS: 10
+      PARITY_URL: "${PARITY_URL}"
+      PARITY_REQUEST_INTERVAL_SECONDS: "${PARITY_REQUEST_INTERVAL_SECONDS}"
+      COMPARE_WITH_ETHERSCAN: "${COMPARE_WITH_ETHERSCAN}"
     ports:
-      # port for checking health.
-      - "127.0.0.1:3000:3000"
-    entrypoint: "/bin/sh"
-    command: ["-c", "npm start"]
+      - "3000:3000"
+    volumes:
+      - "../:/opt/app"
+  test:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        NODE_ENV: development
+    volumes:
+      - "../:/opt/app"
+    command: sh -c "
+      npm run lint
+      && npm run format "
